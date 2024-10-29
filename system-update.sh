@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+prune_docker() {
+  if ! command -v docker &> /dev/null
+  then
+    return
+  fi
+  docker container prune
+  docker image prune
+  docker network prune
+}
+
 update_asdf() {
   if ! command -v asdf &> /dev/null
   then
@@ -155,6 +165,9 @@ if [[ "$1" == "--full" || "$1" == "-f" ]]; then
   update_cargo
   update_devbox
   update_uv
+
+  # disk space
+  prune_docker
 fi
 
 
