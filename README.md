@@ -6,7 +6,7 @@ A system update script for developers, using Ubuntu / Debian / elementaryOS base
 # Daily - system packages from apt / zypper / snap / flatpak
 ./system-update.sh
 
-# Weekly - updates for pipx / pyenv / uv / nvm / asdf / composer / cargo / devbox
+# Weekly - updates for pipx / pyenv / uv / nvm / asdf / composer / cargo / devbox / docker
 ./system-update.sh --full
 ```
 ## Features
