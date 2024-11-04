@@ -5,9 +5,9 @@ prune_docker() {
   then
     return
   fi
-  docker container prune
-  docker image prune
-  docker network prune
+  docker container prune -f
+  docker image prune -f
+  docker network prune -f
 }
 
 update_asdf() {
