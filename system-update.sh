@@ -117,6 +117,7 @@ update_pyenv() {
   echo ">>> Updating pyenv packages..."
   pyenv update
 }
+
 update_snap() {
   if ! command -v snap &> /dev/null
   then
