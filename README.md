@@ -12,5 +12,7 @@ A system update script for developers, using Ubuntu / Debian / elementaryOS base
 ## Features
 
 - Only runs updates for tools that are currently installed.
+- Prunes unused Docker containers
+- Optionally prunes leftover tooling caches
 
 Support for other tools / operating systems are welcome.
