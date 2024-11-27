@@ -206,54 +206,45 @@ update_zypper() {
 }
 
 
-if [ $# -gt 0 ]; then
-  func=$1
-  shift
-  if declare -f "$func" > /dev/null; then
-    "$func" "$@"
-  else
-    echo "Unknown function: $func"
-  fi
-else
-  # sys
-  update_apt
-  update_zypper
-  update_snap
-  update_flatpak
+# sys
+update_apt
+update_zypper
+update_snap
+update_flatpak
 
-  if [[ "$1" == "--full" || "$1" == "-f" ]]; then
-    sudo apt-get autoremove -y  
-    # web
-    update_pipx
-    update_pyenv
-    update_nvm
-    update_asdf
-    update_composer
-    update_cargo
-    update_devbox
-    update_uv
+if [[ "$1" == "--full" || "$1" == "-f" ]]; then
+  sudo apt-get autoremove -y  
+  # web
+  update_pipx
+  update_pyenv
+  update_nvm
+  update_asdf
+  update_composer
+  update_cargo
+  update_devbox
+  update_uv
 
-    # disk space
-    prune_docker
-    prune_caches
-  fi
-
-  if [ -f "/var/run/reboot-required" ]; then
-      echo 
-      echo "Reboot is required."
-
-        # Prompt for confirmation
-      read -p "Do you want to reboot now? (y/N): " answer
-      
-      # Check the user's response
-      if [ "$answer" == "y" ]; then
-          shutdown -r now
-      else
-          echo "Reboot cancelled."
-      fi
-  fi
-
+  # disk space
+  prune_docker
+  prune_caches
 fi
+
+if [ -f "/var/run/reboot-required" ]; then
+    echo 
+    echo "Reboot is required."
+
+      # Prompt for confirmation
+    read -p "Do you want to reboot now? (y/N): " answer
+    
+    # Check the user's response
+    if [ "$answer" == "y" ]; then
+        shutdown -r now
+    else
+        echo "Reboot cancelled."
+    fi
+fi
+
+
 
 
 
