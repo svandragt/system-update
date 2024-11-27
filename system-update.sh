@@ -10,6 +10,57 @@ prune_docker() {
   docker network prune -f
 }
 
+prune_caches() {
+  # Define the list of command and cache directory pairs
+  declare -A command_cache
+  command_cache=(
+    ["composer"]="$HOME/.composer"
+    ["deno"]="$HOME/.cache/deno"
+    ["devbox"]="$HOME/.cache/devbox"
+    ["docker"]="$HOME/.docker"
+    ["gem"]="$HOME/.gem"
+    ["go"]="$HOME/.cache/go-build"
+    ["gradle"]="$HOME/.gradle"
+    ["maven"]="$HOME/.m2"
+    ["node"]="$HOME/.node-gyp"
+    ["npm"]="$HOME/.npm"
+    ["pip"]="$HOME/.cache/pip"
+    ["poetry"]="$HOME/.cache/pypoetry"
+    ["ruby"]="$HOME/.bundle"
+    ["rustup"]="$HOME/.cargo"
+    ["subl"]="$HOME/.cache/sublime-text"
+    ["uv"]="$HOME/.cache/uv"
+    ["yarn"]="$HOME/.yarn"
+    ["zeal"]="$HOME/.local/share/Zeal"
+  )
+
+  # Iterate over the command and cache directory pairs
+  for command in "${!command_cache[@]}"; do
+    cache_dir="${command_cache[$command]}"
+
+    # Check if the command is installed
+    if ! command -v "$command" &> /dev/null; then
+      # If the command is not installed, delete the cache directory
+      if [ -d "$cache_dir" ]; then
+        size=$(du -sh "$cache_dir" | awk '{print $1}')
+        read -p "Do you want to delete the cache for $command [$cache_dir (${size})]? (y/N): " answer
+      # Check the user's response
+      if [ "$answer" == "y" ]; then
+        echo "Deleting cache directory for $command: $cache_dir"
+        rm -rf "$cache_dir"
+        if command -v trash &> /dev/null; then
+          trash "$cache_dir"
+        else
+          rm -rf "$cache_dir"
+        fi
+      else
+        echo "Skipped $command: $cache_dir"
+      fi
+      fi
+    fi
+  done
+}
+
 update_asdf() {
   if ! command -v asdf &> /dev/null
   then
@@ -149,40 +200,55 @@ update_zypper() {
   sudo zypper ps -s
 }
 
-# sys
-update_apt
-update_zypper
-update_snap
-update_flatpak
 
-if [[ "$1" == "--full" || "$1" == "-f" ]]; then
-  sudo apt-get autoremove -y  
-  # web
-  update_pipx
-  update_pyenv
-  update_nvm
-  update_asdf
-  update_composer
-  update_cargo
-  update_devbox
-  update_uv
+if [ $# -gt 0 ]; then
+  func=$1
+  shift
+  if declare -f "$func" > /dev/null; then
+    "$func" "$@"
+  else
+    echo "Unknown function: $func"
+  fi
+else
+  # sys
+  update_apt
+  update_zypper
+  update_snap
+  update_flatpak
 
-  # disk space
-  prune_docker
+  if [[ "$1" == "--full" || "$1" == "-f" ]]; then
+    sudo apt-get autoremove -y  
+    # web
+    update_pipx
+    update_pyenv
+    update_nvm
+    update_asdf
+    update_composer
+    update_cargo
+    update_devbox
+    update_uv
+
+    # disk space
+    prune_docker
+    prune_caches
+  fi
+
+  if [ -f "/var/run/reboot-required" ]; then
+      echo 
+      echo "Reboot is required."
+
+        # Prompt for confirmation
+      read -p "Do you want to reboot now? (y/N): " answer
+      
+      # Check the user's response
+      if [ "$answer" == "y" ]; then
+          shutdown -r now
+      else
+          echo "Reboot cancelled."
+      fi
+  fi
+
 fi
 
 
-if [ -f "/var/run/reboot-required" ]; then
-    echo 
-    echo "Reboot is required."
 
-      # Prompt for confirmation
-    read -p "Do you want to reboot now? (y/N): " answer
-    
-    # Check the user's response
-    if [ "$answer" == "y" ]; then
-        shutdown -r now
-    else
-        echo "Reboot cancelled."
-    fi
-fi
