@@ -14,6 +14,8 @@ prune_caches() {
   # Define the list of command and cache directory pairs
   declare -A command_cache
   command_cache=(
+    ["ag"]="$HOME/.cache/ag"
+    ["cmake"]="$HOME/.cache/cmake"
     ["composer"]="$HOME/.composer"
     ["deno"]="$HOME/.cache/deno"
     ["devbox"]="$HOME/.cache/devbox"
@@ -22,6 +24,7 @@ prune_caches() {
     ["go"]="$HOME/.cache/go-build"
     ["gradle"]="$HOME/.gradle"
     ["maven"]="$HOME/.m2"
+    ["nix"]="$HOME/.cache/nix"
     ["node"]="$HOME/.node-gyp"
     ["npm"]="$HOME/.npm"
     ["pip"]="$HOME/.cache/pip"
@@ -29,9 +32,9 @@ prune_caches() {
     ["ruby"]="$HOME/.bundle"
     ["rustup"]="$HOME/.cargo"
     ["subl"]="$HOME/.cache/sublime-text"
+    ["tig"]="$HOME/.cache/tig"
     ["uv"]="$HOME/.cache/uv"
     ["yarn"]="$HOME/.yarn"
-    ["zeal"]="$HOME/.local/share/Zeal"
   )
 
   # Iterate over the command and cache directory pairs
