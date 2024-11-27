@@ -35,6 +35,8 @@ prune_caches() {
     ["tig"]="$HOME/.cache/tig"
     ["uv"]="$HOME/.cache/uv"
     ["yarn"]="$HOME/.yarn"
+    ["npm"]="$HOME/.npm"
+    ["pnpm"]="$HOME/.cache/pnpm"
   )
 
   # Iterate over the command and cache directory pairs
