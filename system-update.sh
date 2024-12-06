@@ -126,6 +126,7 @@ update_devbox() {
   echo ">>> Updating devbox..."
   
   devbox version update
+  refresh-global
 }
 
 update_flatpak() {
