@@ -3,10 +3,10 @@ A system update script for developers, using Ubuntu / Debian / elementaryOS base
 
 ## Usage
 ```
-# Daily - system packages from apt / zypper / snap / flatpak
+# Daily Example - system packages from apt / zypper / snap / flatpak
 ./system-update.sh
 
-# Weekly - updates for pipx / pyenv / uv / nvm / asdf / composer / cargo / devbox / docker
+# Weekly example, update everything
 ./system-update.sh --full
 ```
 ## Features
@@ -16,3 +16,22 @@ A system update script for developers, using Ubuntu / Debian / elementaryOS base
 - Optionally prunes leftover tooling caches
 
 Support for other tools / operating systems are welcome.
+
+## Tools
+
+The following tools are supported (this list is periodically updated):
+
+ - apt
+ - asdf
+ - caches
+ - cargo
+ - composer
+ - devbox
+ - docker
+ - flatpak
+ - nvm
+ - pipx
+ - pyenv
+ - snap
+ - uv
+ - zypper
