@@ -124,9 +124,10 @@ update_devbox() {
   fi
   echo;
   echo ">>> Updating devbox..."
-  
+
   devbox version update
-  refresh-global
+  devbox global update
+
 }
 
 update_flatpak() {
@@ -220,9 +221,9 @@ if [[ "$1" == "--full" || "$1" == "-f" ]]; then
   update_pyenv
   update_nvm
   update_asdf
+  update_devbox
   update_composer
   update_cargo
-  update_devbox
   update_uv
 
   # disk space
