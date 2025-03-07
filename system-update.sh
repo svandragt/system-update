@@ -127,7 +127,7 @@ update_devbox() {
 
   devbox version update
   devbox global update
-
+  refresh-global
 }
 
 update_flatpak() {
@@ -233,20 +233,13 @@ fi
 
 if [ -f "/var/run/reboot-required" ]; then
     echo 
-    echo "Reboot is required."
-
-      # Prompt for confirmation
-    read -p "Do you want to reboot now? (y/N): " answer
-    
-    # Check the user's response
-    if [ "$answer" == "y" ]; then
-        shutdown -r now
-    else
-        echo "Reboot cancelled."
-    fi
+    echo "A reboot is recommended."
 fi
 
-
-
-
-
+# Nice goodbye
+if ! command -v fortune &> /dev/null
+then
+    return
+fi
+echo
+fortune -s
