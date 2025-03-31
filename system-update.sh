@@ -48,16 +48,11 @@ prune_caches() {
       # If the command is not installed, delete the cache directory
       if [ -d "$cache_dir" ]; then
         size=$(du -sh "$cache_dir" | awk '{print $1}')
-        read -p "Do you want to delete the cache for $command [$cache_dir (${size})]? (y/N): " answer
+        read -p "Do you want to delete the orphaned cache for $command [$cache_dir (${size})]? (y/N): " answer
       # Check the user's response
       if [ "$answer" == "y" ]; then
         echo "Deleting cache directory for $command: $cache_dir"
         rm -rf "$cache_dir"
-        if command -v trash &> /dev/null; then
-          trash "$cache_dir"
-        else
-          rm -rf "$cache_dir"
-        fi
       else
         echo "Skipped $command: $cache_dir"
       fi
@@ -227,7 +222,7 @@ if [[ "$1" == "--full" || "$1" == "-f" ]]; then
 
   # disk space
   prune_docker
-  #prune_caches
+  prune_caches
 fi
 
 if [ -f "/var/run/reboot-required" ]; then
