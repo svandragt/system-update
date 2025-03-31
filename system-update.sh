@@ -137,19 +137,6 @@ update_flatpak() {
   flatpak uninstall --unused -y
 }
 
-update_nvm() {
-  if ! command -v nvm &> /dev/null
-  then
-    return
-  fi
-  echo;
-  echo ">>> Updating nvm lts..."
-  update-nvm.sh
-  nvm install "lts/*" --reinstall-packages-from="$(nvm current)"
-  nvm install "lts/gallium"
-  nvm list
-}
-
 update_pipx() {
   if ! command -v pipx &> /dev/null
   then
@@ -213,7 +200,6 @@ if [[ "$1" == "--full" || "$1" == "-f" ]]; then
   # web
   update_pipx
   update_pyenv
-  update_nvm
   update_asdf
   update_devbox
   update_composer
