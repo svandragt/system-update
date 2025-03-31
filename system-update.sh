@@ -127,7 +127,6 @@ update_devbox() {
 
   devbox version update
   devbox global update
-  refresh-global
 }
 
 update_flatpak() {
@@ -228,7 +227,7 @@ if [[ "$1" == "--full" || "$1" == "-f" ]]; then
 
   # disk space
   prune_docker
-  prune_caches
+  #prune_caches
 fi
 
 if [ -f "/var/run/reboot-required" ]; then
