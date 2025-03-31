@@ -29,7 +29,6 @@ The following tools are supported (this list is periodically updated):
  - devbox
  - docker
  - flatpak
- - nvm
  - pipx
  - pyenv
  - snap
