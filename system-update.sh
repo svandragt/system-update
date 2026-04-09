@@ -81,6 +81,7 @@ update_apt() {
   echo ">>> Updating apt-get packages..."
   sudo apt-get update -qq
   sudo apt-get full-upgrade -y
+  echo;
   echo ">>> Updating missing linux headers..."
   sudo apt-get install linux-headers-$(uname -r) -y
 }
@@ -97,7 +98,6 @@ update_cargo() {
   then
     rustup update
   fi
-  cargo install-update --all
 }
 
 update_composer() {
@@ -167,6 +167,16 @@ update_snap() {
   sudo snap refresh
 }
 
+update_tldr() {
+  if ! command -v tldr &> /dev/null
+  then
+    return
+  fi
+  echo;
+  echo ">>> Updating tldr..."
+  tldr -u
+}
+
 update_uv() {
   if ! command -v uv &> /dev/null
   then
@@ -196,7 +206,8 @@ update_snap
 update_flatpak
 
 if [[ "$1" == "--full" || "$1" == "-f" ]]; then
-  sudo apt-get autoremove -y  
+  sudo apt-get autoremove
+  update_tldr
   # web
   update_pipx
   update_pyenv
@@ -217,9 +228,8 @@ if [ -f "/var/run/reboot-required" ]; then
 fi
 
 # Nice goodbye
-if ! command -v fortune &> /dev/null
+if command -v fortune &> /dev/null
 then
-    return
+    echo
+    fortune -s
 fi
-echo
-fortune -s
