@@ -79,8 +79,7 @@ update_apt() {
   fi
   echo;
   echo ">>> Updating apt-get packages..."
-  sudo apt-get update -qq
-  sudo apt-get full-upgrade -y
+  sudo apt-get update -qq && sudo apt-get full-upgrade -y || return
   echo;
   echo ">>> Updating missing linux headers..."
   sudo apt-get install "linux-headers-$(uname -r)" -y
