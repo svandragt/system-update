@@ -30,18 +30,19 @@ prune_caches() {
     ["pip"]="$HOME/.cache/pip"
     ["poetry"]="$HOME/.cache/pypoetry"
     ["ruby"]="$HOME/.bundle"
-    ["rustup"]="$HOME/.cargo"
+    ["cargo"]="$HOME/.cargo"
+    ["rustup"]="$HOME/.rustup"
     ["subl"]="$HOME/.cache/sublime-text"
     ["tig"]="$HOME/.cache/tig"
     ["uv"]="$HOME/.cache/uv"
     ["yarn"]="$HOME/.yarn"
-    ["npm"]="$HOME/.npm"
     ["pnpm"]="$HOME/.cache/pnpm"
   )
 
   # Iterate over the command and cache directory pairs
   for command in "${!command_cache[@]}"; do
     cache_dir="${command_cache[$command]}"
+    answer=""
 
     # Check if the command is installed
     if ! command -v "$command" &> /dev/null; then
@@ -49,13 +50,12 @@ prune_caches() {
       if [ -d "$cache_dir" ]; then
         size=$(du -sh "$cache_dir" | awk '{print $1}')
         read -p "Do you want to delete the orphaned cache for $command [$cache_dir (${size})]? (y/N): " answer
-      # Check the user's response
-      if [ "$answer" == "y" ]; then
-        echo "Deleting cache directory for $command: $cache_dir"
-        rm -rf "$cache_dir"
-      else
-        echo "Skipped $command: $cache_dir"
-      fi
+        if [ "$answer" == "y" ]; then
+          echo "Deleting cache directory for $command: $cache_dir"
+          rm -rf "$cache_dir"
+        else
+          echo "Skipped $command: $cache_dir"
+        fi
       fi
     fi
   done
@@ -83,7 +83,7 @@ update_apt() {
   sudo apt-get full-upgrade -y
   echo;
   echo ">>> Updating missing linux headers..."
-  sudo apt-get install linux-headers-$(uname -r) -y
+  sudo apt-get install "linux-headers-$(uname -r)" -y
 }
 
 cleanup_apt() {
