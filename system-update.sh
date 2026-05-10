@@ -220,6 +220,7 @@ update_uv() {
   echo;
   echo ">>> Updating uv packages..."
   uv self update --no-progress
+  uv tool upgrade --all
 }
 
 update_zypper() {
