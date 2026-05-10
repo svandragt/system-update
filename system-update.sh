@@ -86,6 +86,18 @@ update_apt() {
   sudo apt-get install linux-headers-$(uname -r) -y
 }
 
+cleanup_apt() {
+  if ! command -v apt-get &> /dev/null
+  then
+    return
+  fi
+  echo;
+  echo ">>> Cleaning apt packages..."
+  sudo apt-get autoremove -y
+  sudo apt-get autoclean -y
+  sudo apt-get clean
+}
+
 update_cargo() {
   if ! command -v cargo &> /dev/null
   then
@@ -133,8 +145,31 @@ update_flatpak() {
   echo ">>> Updating flatpaks..."
   sudo flatpak update -y
   flatpak update --user -y
+}
+
+cleanup_flatpak() {
+  if ! command -v flatpak &> /dev/null
+  then
+    return
+  fi
+  echo;
   echo ">>> Removing unused flatpaks..."
   flatpak uninstall --unused -y
+}
+
+cleanup_logs() {
+  echo;
+  echo ">>> Cleaning system logs..."
+
+  if command -v journalctl &> /dev/null
+  then
+    sudo journalctl --vacuum-size=500M
+  fi
+
+  if command -v logrotate &> /dev/null && [ -f /etc/logrotate.conf ]
+  then
+    sudo logrotate -f /etc/logrotate.conf
+  fi
 }
 
 update_pipx() {
@@ -206,7 +241,7 @@ update_snap
 update_flatpak
 
 if [[ "$1" == "--full" || "$1" == "-f" ]]; then
-  sudo apt-get autoremove
+  cleanup_apt
   update_tldr
   # web
   update_pipx
@@ -218,6 +253,8 @@ if [[ "$1" == "--full" || "$1" == "-f" ]]; then
   update_uv
 
   # disk space
+  cleanup_flatpak
+  cleanup_logs
   prune_docker
   prune_caches
 fi
