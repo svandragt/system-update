@@ -104,10 +104,15 @@ update_cargo() {
   fi
   echo;
   echo ">>> Updating rust and cargo global packages..."
-  
+
   if command -v rustup &> /dev/null
   then
     rustup update
+  fi
+
+  if command -v cargo-install-update &> /dev/null
+  then
+    cargo install-update -a
   fi
 }
 
@@ -118,8 +123,14 @@ update_composer() {
   fi
   echo;
   echo ">>> Updating composer global packages..."
-  
-  sudo composer self-update
+
+  composer_path=$(command -v composer)
+  if [ -w "$composer_path" ]
+  then
+    composer self-update
+  else
+    sudo composer self-update
+  fi
   composer global update
 }
 
@@ -157,6 +168,10 @@ cleanup_flatpak() {
 }
 
 cleanup_logs() {
+  if ! command -v journalctl &> /dev/null && ! command -v logrotate &> /dev/null
+  then
+    return
+  fi
   echo;
   echo ">>> Cleaning system logs..."
 
