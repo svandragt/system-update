@@ -28,10 +28,12 @@ The following tools are supported (this list is periodically updated):
  - asdf
  - caches
  - cargo
+ - claude
  - composer
  - devbox
  - docker
  - flatpak
+ - npm
  - pipx
  - pyenv
  - snap

@@ -116,6 +116,16 @@ update_cargo() {
   fi
 }
 
+update_claude() {
+  if ! command -v claude &> /dev/null
+  then
+    return
+  fi
+  echo;
+  echo ">>> Updating claude..."
+  claude update
+}
+
 update_composer() {
   if ! command -v composer &> /dev/null
   then
@@ -184,6 +194,16 @@ cleanup_logs() {
   then
     sudo logrotate -f /etc/logrotate.conf
   fi
+}
+
+update_npm() {
+  if ! command -v npm &> /dev/null
+  then
+    return
+  fi
+  echo;
+  echo ">>> Updating npm global packages..."
+  npm update -g
 }
 
 update_pipx() {
@@ -259,10 +279,12 @@ if [[ "$1" == "--full" || "$1" == "-f" ]]; then
   cleanup_apt
   update_tldr
   # web
+  update_npm
   update_pipx
   update_pyenv
   update_asdf
   update_devbox
+  update_claude
   update_composer
   update_cargo
   update_uv
