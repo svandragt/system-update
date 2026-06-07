@@ -13,9 +13,12 @@ A system update script for developers, using Ubuntu / Debian / elementaryOS base
 
 - Only runs updates for tools that are currently installed.
 - Adds conservative APT cleanup on `--full` with `autoremove`, `autoclean`, and `clean`
+- Cleans zypper package caches on `--full`
 - Vacuums systemd journals and forces log rotation on `--full` when supported
 - Removes unused Flatpak runtimes on `--full`
-- Prunes unused Docker containers
+- Applies snapper retention policy to old snapshots on `--full`
+- Prunes unused Docker containers, dangling images, and build cache
+- Prunes the uv wheel/source cache on `--full`
 - Optionally prunes leftover tooling caches
 
 Support for other tools / operating systems are welcome.
@@ -37,6 +40,7 @@ The following tools are supported (this list is periodically updated):
  - pipx
  - pyenv
  - snap
+ - snapper
  - tldr
  - uv
  - zypper

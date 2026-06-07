@@ -8,6 +8,7 @@ prune_docker() {
   docker container prune -f
   docker image prune -f
   docker network prune -f
+  docker builder prune -f
 }
 
 prune_caches() {
@@ -196,6 +197,16 @@ cleanup_logs() {
   fi
 }
 
+cleanup_snapper() {
+  if ! command -v snapper &> /dev/null
+  then
+    return
+  fi
+  echo;
+  echo ">>> Cleaning up old snapper snapshots..."
+  sudo snapper cleanup number
+}
+
 update_npm() {
   if ! command -v npm &> /dev/null
   then
@@ -257,6 +268,16 @@ update_uv() {
   uv tool upgrade --all
 }
 
+prune_uv() {
+  if ! command -v uv &> /dev/null
+  then
+    return
+  fi
+  echo;
+  echo ">>> Pruning uv cache..."
+  uv cache prune
+}
+
 update_zypper() {
   if ! command -v zypper &> /dev/null
   then
@@ -266,6 +287,16 @@ update_zypper() {
   echo ">>> Updating zypper packages..."
   sudo zypper dup
   sudo zypper ps -s
+}
+
+cleanup_zypper() {
+  if ! command -v zypper &> /dev/null
+  then
+    return
+  fi
+  echo;
+  echo ">>> Cleaning zypper caches..."
+  sudo zypper clean --all
 }
 
 
@@ -290,9 +321,12 @@ if [[ "$1" == "--full" || "$1" == "-f" ]]; then
   update_uv
 
   # disk space
+  cleanup_zypper
   cleanup_flatpak
   cleanup_logs
+  cleanup_snapper
   prune_docker
+  prune_uv
   prune_caches
 fi
 
