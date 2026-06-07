@@ -175,7 +175,8 @@ cleanup_flatpak() {
   fi
   echo;
   echo ">>> Removing unused flatpaks..."
-  flatpak uninstall --unused -y
+  sudo flatpak uninstall --system --unused -y
+  flatpak uninstall --user --unused -y
 }
 
 cleanup_logs() {
