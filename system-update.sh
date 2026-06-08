@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# KB used on the filesystem holding $HOME.
+disk_used_kb() {
+  df -Pk "$HOME" | awk 'NR==2 {print $3}'
+}
+
 prune_docker() {
   if ! command -v docker &> /dev/null
   then
@@ -9,6 +14,22 @@ prune_docker() {
   docker image prune -f
   docker network prune -f
   docker builder prune -f
+}
+
+# clear_if_large <name> <dir> <threshold_gb> <clear command...>
+# Runs the aggressive clear command only when the cache exceeds the threshold,
+# so big caches get a full wipe occasionally instead of every week.
+clear_if_large() {
+  local name="$1" dir="$2" threshold_gb="$3"; shift 3
+  [ -d "$dir" ] || return
+  local kb threshold_kb
+  kb=$(du -sk "$dir" 2>/dev/null | awk '{print $1}')
+  threshold_kb=$(( threshold_gb * 1024 * 1024 ))
+  if [ "${kb:-0}" -gt "$threshold_kb" ]; then
+    echo
+    echo ">>> $name cache is $(du -sh "$dir" 2>/dev/null | awk '{print $1}') (> ${threshold_gb}G), clearing..."
+    "$@"
+  fi
 }
 
 prune_caches() {
@@ -117,6 +138,27 @@ update_cargo() {
   fi
 }
 
+cleanup_cargo() {
+  if ! command -v cargo &> /dev/null
+  then
+    return
+  fi
+  echo;
+  echo ">>> Cleaning cargo registry cache..."
+  if command -v cargo-cache &> /dev/null
+  then
+    # Gentle: removes re-downloadable registry src/cache, keeps installed binaries.
+    cargo cache --autoclean
+  else
+    # No cargo-cache: only wipe the re-downloadable registry caches (never ~/.cargo/bin),
+    # and only once they have grown large.
+    clear_if_large "cargo registry" "$HOME/.cargo/registry" 2 \
+      rm -rf "$HOME/.cargo/registry/cache" "$HOME/.cargo/registry/src"
+  fi
+  # rustup is intentionally left alone: wiping ~/.rustup removes installed
+  # toolchains entirely, and there is no safe "prune only stale toolchains" command.
+}
+
 update_claude() {
   if ! command -v claude &> /dev/null
   then
@@ -218,6 +260,35 @@ update_npm() {
   npm update -g
 }
 
+cleanup_npm() {
+  if ! command -v npm &> /dev/null
+  then
+    return
+  fi
+  [ -d "$HOME/.npm" ] || return
+  # verify re-hashes the whole cache, so skip it on trivially small caches
+  # where it would just be a slow no-op.
+  local kb
+  kb=$(du -sk "$HOME/.npm" 2>/dev/null | awk '{print $1}')
+  if [ "${kb:-0}" -gt $(( 1 * 1024 * 1024 )) ]; then
+    echo;
+    echo ">>> Verifying npm cache..."
+    # Gentle: garbage-collects unused/corrupt entries without a full wipe.
+    npm cache verify
+  fi
+  # Aggressive full wipe only when the cache has grown large.
+  clear_if_large "npm" "$HOME/.npm" 5 npm cache clean --force
+}
+
+cleanup_go() {
+  if ! command -v go &> /dev/null
+  then
+    return
+  fi
+  # Go auto-trims its build cache, so only force a full wipe when it grows large.
+  clear_if_large "go" "$HOME/.cache/go-build" 5 go clean -cache
+}
+
 update_pipx() {
   if ! command -v pipx &> /dev/null
   then
@@ -315,6 +386,14 @@ if [[ "$1" == "--full" || "$1" == "-f" ]]; then
   update_pipx
   update_pyenv
   update_asdf
+  # Prune the uv cache before devbox: devbox kicks off background uv/nix work
+  # that holds the cache lock and would otherwise make prune_uv hang.
+  # Measured on its own so its reclaim still counts toward the final summary,
+  # without the intervening update downloads polluting the number.
+  uv_before=$(disk_used_kb)
+  prune_uv
+  uv_freed_kb=$(( uv_before - $(disk_used_kb) ))
+  [ "$uv_freed_kb" -lt 0 ] && uv_freed_kb=0
   update_devbox
   update_claude
   update_composer
@@ -322,13 +401,30 @@ if [[ "$1" == "--full" || "$1" == "-f" ]]; then
   update_uv
 
   # disk space
+  used_before=$(disk_used_kb)
   cleanup_zypper
   cleanup_flatpak
   cleanup_logs
   cleanup_snapper
+  cleanup_npm
+  cleanup_go
+  cleanup_cargo
   prune_docker
-  prune_uv
   prune_caches
+
+  # Report space reclaimed by the cleanup section, plus the earlier uv prune.
+  freed_kb=$(( used_before - $(disk_used_kb) + uv_freed_kb ))
+  echo
+  if [ "$freed_kb" -gt 0 ]; then
+    echo ">>> Reclaimed $(echo "$freed_kb" | awk '{
+      kb=$1;
+      if (kb >= 1024*1024) printf "%.1fG", kb/1024/1024;
+      else if (kb >= 1024) printf "%.0fM", kb/1024;
+      else printf "%dK", kb;
+    }') of disk space."
+  else
+    echo ">>> No disk space reclaimed."
+  fi
 fi
 
 if [ -f "/var/run/reboot-required" ]; then
