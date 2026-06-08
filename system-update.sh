@@ -210,6 +210,30 @@ update_flatpak() {
   flatpak update --user -y
 }
 
+update_fwupd() {
+  if ! command -v fwupdmgr &> /dev/null
+  then
+    return
+  fi
+  echo;
+  echo ">>> Checking firmware updates..."
+  # Refresh metadata (rate-limited to once/24h, so allow it to no-op) and list
+  # what is available. Flashing is left to the user: `sudo fwupdmgr update`.
+  sudo fwupdmgr refresh || true
+  sudo fwupdmgr get-updates || true
+}
+
+update_vscode() {
+  for editor in code codium; do
+    if command -v "$editor" &> /dev/null
+    then
+      echo;
+      echo ">>> Updating $editor extensions..."
+      "$editor" --update-extensions
+    fi
+  done
+}
+
 cleanup_flatpak() {
   if ! command -v flatpak &> /dev/null
   then
@@ -377,11 +401,13 @@ update_apt
 update_zypper
 update_snap
 update_flatpak
+update_fwupd
 
 if [[ "$1" == "--full" || "$1" == "-f" ]]; then
   cleanup_apt
   update_tldr
   # web
+  update_vscode
   update_npm
   update_pipx
   update_pyenv

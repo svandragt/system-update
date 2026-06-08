@@ -23,6 +23,10 @@ A system update script for developers, using Ubuntu / Debian / elementaryOS base
 - Wipes the Go build cache on `--full` only when it grows past 5G
 - Cleans the cargo registry cache on `--full` (via `cargo-cache` if present, otherwise wipes re-downloadable registry caches past 2G; leaves rustup toolchains untouched)
 - Reports the disk space reclaimed at the end of a `--full` run
+- Checks for firmware updates with `fwupd` (refreshes metadata and lists available updates; flashing is left to you via `sudo fwupdmgr update`)
+- Updates VSCode / VSCodium extensions on `--full` (`code`/`codium --update-extensions`)
+
+> **Note on `fwupd`:** on some systems (e.g. Ubuntu 22.04) the snap build of `fwupd` is more up to date than the apt one. If you want the fresher version: `sudo apt remove --purge fwupd && sudo snap install fwupd`.
 - Optionally prunes leftover tooling caches
 
 Support for other tools / operating systems are welcome.
@@ -40,6 +44,7 @@ The following tools are supported (this list is periodically updated):
  - devbox
  - docker
  - flatpak
+ - fwupd
  - go
  - npm
  - pipx
@@ -48,4 +53,5 @@ The following tools are supported (this list is periodically updated):
  - snapper
  - tldr
  - uv
+ - vscode / vscodium
  - zypper
