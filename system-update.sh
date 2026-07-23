@@ -107,6 +107,16 @@ update_apt() {
   sudo apt-get install "linux-headers-$(uname -r)" -y
 }
 
+check_dkms() {
+  if ! command -v dkms &> /dev/null
+  then
+    return
+  fi
+  echo;
+  echo ">>> DKMS module status:"
+  dkms status
+}
+
 cleanup_apt() {
   if ! command -v apt-get &> /dev/null
   then
@@ -218,9 +228,14 @@ update_fwupd() {
   echo;
   echo ">>> Checking firmware updates..."
   # Refresh metadata (rate-limited to once/24h, so allow it to no-op) and list
-  # what is available. Flashing is left to the user: `sudo fwupdmgr update`.
+  # what is available.
   sudo fwupdmgr refresh || true
-  sudo fwupdmgr get-updates || true
+  if sudo fwupdmgr get-updates && [ -t 0 ]; then
+    read -r -p "Apply firmware updates now? [y/N] " reply
+    if [[ "$reply" =~ ^[Yy]$ ]]; then
+      sudo fwupdmgr update
+    fi
+  fi
 }
 
 update_vscode() {
@@ -371,7 +386,7 @@ prune_uv() {
   fi
   echo;
   echo ">>> Pruning uv cache..."
-  uv cache prune
+  uv cache prune --force
 }
 
 update_zypper() {
@@ -398,6 +413,7 @@ cleanup_zypper() {
 
 # sys
 update_apt
+check_dkms
 update_zypper
 update_snap
 update_flatpak
