@@ -395,6 +395,8 @@ update_zypper() {
     return
   fi
   echo;
+  echo ">>> Checking zypper repo mirrors..."
+  zypper lr -u
   echo ">>> Updating zypper packages..."
   sudo zypper dup
   sudo zypper ps -s
