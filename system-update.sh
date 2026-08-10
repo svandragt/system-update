@@ -230,7 +230,7 @@ update_fwupd() {
   # Refresh metadata (rate-limited to once/24h, so allow it to no-op) and list
   # what is available.
   sudo fwupdmgr refresh || true
-  if sudo fwupdmgr get-updates && [ -t 0 ]; then
+  if sudo fwupdmgr get-updates && [[ "$1" == "--full" || "$1" == "-f" ]] && [ -t 0 ]; then
     read -r -p "Apply firmware updates now? [y/N] " reply
     if [[ "$reply" =~ ^[Yy]$ ]]; then
       sudo fwupdmgr update
@@ -417,7 +417,7 @@ check_dkms
 update_zypper
 update_snap
 update_flatpak
-update_fwupd
+update_fwupd "$1"
 
 if [[ "$1" == "--full" || "$1" == "-f" ]]; then
   cleanup_apt

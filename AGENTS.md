@@ -21,8 +21,8 @@ tools that are not installed are silently skipped. The execution order at the
 bottom of the file controls daily versus `--full` behavior.
 
 - Always runs: `update_apt`, `update_zypper`, `update_snap`, `update_flatpak`,
-  and `update_fwupd`. The firmware step refreshes metadata and lists updates;
-  it never flashes firmware automatically.
+  and `update_fwupd`. The firmware step always refreshes metadata and lists
+  updates; it only prompts to flash them when run with `--full`.
 - `--full` or `-f` runs, in order: `cleanup_apt`; language and runtime updates
   (`update_tldr`, `update_vscode`, `update_npm`, `update_pipx`, `update_pyenv`,
   `update_asdf`, `update_devbox`, `update_claude`, `update_composer`,
