@@ -437,7 +437,7 @@ check_dkms
 update_zypper
 update_snap
 update_flatpak
-update_fwupd "$1"
+update_fwupd "${1:-}"
 
 if [[ "${1:-}" == "--full" || "${1:-}" == "-f" ]]; then
   cleanup_apt
