@@ -1,8 +1,22 @@
 #!/usr/bin/env bash
 
-# KB used on the filesystem holding $HOME.
-disk_used_kb() {
-  df -Pk "$HOME" | awk 'NR==2 {print $3}'
+# Running total of disk space reclaimed, in KB. Filled by account_dir and
+# prune_caches as they delete things.
+FREED_KB=0
+
+# account_dir <dir> <command...>: run the cleanup command, then add the space it
+# actually freed on <dir> to FREED_KB. A du delta measured tightly around one
+# directory is reliable; the old whole-filesystem df delta was not, because the
+# devbox/nix background work this script kicks off writes to the disk during the
+# cleanup window and masked the real reclaim.
+account_dir() {
+  local dir="$1"; shift
+  local before after
+  before=$(du -sk "$dir" 2>/dev/null | awk '{print $1}')
+  "$@"
+  after=$(du -sk "$dir" 2>/dev/null | awk '{print $1}')
+  local delta=$(( ${before:-0} - ${after:-0} ))
+  [ "$delta" -gt 0 ] && FREED_KB=$(( FREED_KB + delta ))
 }
 
 prune_docker() {
@@ -10,6 +24,8 @@ prune_docker() {
   then
     return
   fi
+  echo;
+  echo ">>> Pruning docker..."
   docker container prune -f
   docker image prune -f
   docker network prune -f
@@ -61,25 +77,23 @@ prune_caches() {
     ["pnpm"]="$HOME/.cache/pnpm"
   )
 
-  # Iterate over the command and cache directory pairs
+  # An orphaned cache (its tool is no longer installed) is pure re-downloadable
+  # waste, so delete it automatically when the saving is worth it. Tiny orphans
+  # are left rather than prompting, which keeps the run non-interactive (a read
+  # prompt here would hang a cron or piped run).
+  # ponytail: 200M "significant" threshold; sub-threshold orphans left behind.
+  local threshold_kb=$(( 200 * 1024 ))
   for command in "${!command_cache[@]}"; do
-    cache_dir="${command_cache[$command]}"
-    answer=""
-
-    # Check if the command is installed
-    if ! command -v "$command" &> /dev/null; then
-      # If the command is not installed, delete the cache directory
-      if [ -d "$cache_dir" ]; then
-        size=$(du -sh "$cache_dir" | awk '{print $1}')
-        read -p "Do you want to delete the orphaned cache for $command [$cache_dir (${size})]? (y/N): " answer
-        if [ "$answer" == "y" ]; then
-          echo "Deleting cache directory for $command: $cache_dir"
-          rm -rf "$cache_dir"
-        else
-          echo "Skipped $command: $cache_dir"
-        fi
-      fi
-    fi
+    local cache_dir="${command_cache[$command]}"
+    command -v "$command" &> /dev/null && continue
+    [ -d "$cache_dir" ] || continue
+    local kb
+    kb=$(du -sk "$cache_dir" 2>/dev/null | awk '{print $1}')
+    [ "${kb:-0}" -gt "$threshold_kb" ] || continue
+    echo
+    echo ">>> Removing orphaned $command cache: $cache_dir ($(du -sh "$cache_dir" 2>/dev/null | awk '{print $1}'))"
+    rm -rf "$cache_dir"
+    FREED_KB=$(( FREED_KB + kb ))
   done
 }
 
@@ -207,6 +221,10 @@ update_devbox() {
 
   devbox version update
   devbox global update
+  # Rebuild the global profile so the next shell isn't "out of date". This is the
+  # scriptable half of the refresh-global alias; the eval-into-shell half only
+  # matters for an interactive session, so it is dropped here.
+  devbox global shellenv --preserve-path-stack -r > /dev/null
 }
 
 update_flatpak() {
@@ -421,7 +439,7 @@ update_snap
 update_flatpak
 update_fwupd "$1"
 
-if [[ "$1" == "--full" || "$1" == "-f" ]]; then
+if [[ "${1:-}" == "--full" || "${1:-}" == "-f" ]]; then
   cleanup_apt
   update_tldr
   # web
@@ -432,35 +450,28 @@ if [[ "$1" == "--full" || "$1" == "-f" ]]; then
   update_asdf
   # Prune the uv cache before devbox: devbox kicks off background uv/nix work
   # that holds the cache lock and would otherwise make prune_uv hang.
-  # Measured on its own so its reclaim still counts toward the final summary,
-  # without the intervening update downloads polluting the number.
-  uv_before=$(disk_used_kb)
-  prune_uv
-  uv_freed_kb=$(( uv_before - $(disk_used_kb) ))
-  [ "$uv_freed_kb" -lt 0 ] && uv_freed_kb=0
+  account_dir "$HOME/.cache/uv" prune_uv
   update_devbox
   update_claude
   update_composer
   update_cargo
   update_uv
 
-  # disk space
-  used_before=$(disk_used_kb)
+  # disk space. account_dir measures the du delta on each home cache we clear;
+  # zypper/flatpak/journal/docker report their own freed space inline.
   cleanup_zypper
   cleanup_flatpak
   cleanup_logs
   cleanup_snapper
-  cleanup_npm
-  cleanup_go
-  cleanup_cargo
+  account_dir "$HOME/.npm" cleanup_npm
+  account_dir "$HOME/.cache/go-build" cleanup_go
+  account_dir "$HOME/.cargo" cleanup_cargo
   prune_docker
   prune_caches
 
-  # Report space reclaimed by the cleanup section, plus the earlier uv prune.
-  freed_kb=$(( used_before - $(disk_used_kb) + uv_freed_kb ))
   echo
-  if [ "$freed_kb" -gt 0 ]; then
-    echo ">>> Reclaimed $(echo "$freed_kb" | awk '{
+  if [ "$FREED_KB" -gt 0 ]; then
+    echo ">>> Reclaimed $(echo "$FREED_KB" | awk '{
       kb=$1;
       if (kb >= 1024*1024) printf "%.1fG", kb/1024/1024;
       else if (kb >= 1024) printf "%.0fM", kb/1024;
