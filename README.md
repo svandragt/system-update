@@ -25,6 +25,8 @@ A system update script for developers, using Ubuntu / Debian / elementaryOS base
 - Reports the disk space reclaimed at the end of a `--full` run
 - Checks for firmware updates with `fwupd` (refreshes metadata and lists available updates; flashing is left to you via `sudo fwupdmgr update`)
 - Updates VSCode / VSCodium extensions on `--full` (`code`/`codium --update-extensions`)
+- Updates the home-manager flake and switches generations on `--full`, then collects nix garbage older than 30 days
+- Writes package manifests with `hm export` at the end of a `--full` run
 
 > **Note on `fwupd`:** on some systems (e.g. Ubuntu 22.04) the snap build of `fwupd` is more up to date than the apt one. If you want the fresher version: `sudo apt remove --purge fwupd && sudo snap install fwupd`.
 - Optionally prunes leftover tooling caches
@@ -40,7 +42,7 @@ The following tools are supported (this list is periodically updated):
  - caches
  - cargo
  - claude
- - composer
+ - home-manager / nix
  - devbox
  - docker
  - flatpak

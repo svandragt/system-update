@@ -25,10 +25,12 @@ bottom of the file controls daily versus `--full` behavior.
   updates; it only prompts to flash them when run with `--full`.
 - `--full` or `-f` runs, in order: `cleanup_apt`; language and runtime updates
   (`update_tldr`, `update_vscode`, `update_npm`, `update_pipx`, `update_pyenv`,
-  `update_asdf`, `update_devbox`, `update_claude`, `update_composer`,
-  `update_cargo`, and `update_uv`); then disk-space reclamation
-  (`cleanup_zypper`, `cleanup_flatpak`, `cleanup_logs`, `cleanup_snapper`,
-  `prune_docker`, `prune_uv`, and `prune_caches`).
+  `update_asdf`, `prune_uv`, `update_home_manager`, `update_devbox`,
+  `update_claude`, `update_cargo`, and `update_uv`); then disk-space
+  reclamation (`cleanup_zypper`, `cleanup_flatpak`, `cleanup_logs`,
+  `cleanup_snapper`, `cleanup_npm`, `cleanup_go`, `cleanup_cargo`,
+  `prune_docker`, and `cleanup_nix`); then `export_manifests` and
+  `prune_caches`.
 - The trailing block prints a reboot hint when `/var/run/reboot-required`
   exists and a short fortune when `fortune` is available.
 
