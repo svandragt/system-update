@@ -211,6 +211,29 @@ update_composer() {
   composer global update
 }
 
+update_home_manager() {
+  local flake="$HOME/me/sync/core/nix"
+  if ! command -v home-manager &> /dev/null || [ ! -f "$flake/flake.nix" ]
+  then
+    return
+  fi
+  echo;
+  echo ">>> Updating home-manager..."
+  nix flake update --flake "$flake"
+  home-manager switch --flake "$flake#sander"
+}
+
+cleanup_nix() {
+  if ! command -v nix-collect-garbage &> /dev/null
+  then
+    return
+  fi
+  echo;
+  echo ">>> Collecting nix garbage..."
+  # Drops old home-manager generations too; keep 30 days for rollback.
+  nix-collect-garbage --delete-older-than 30d
+}
+
 update_devbox() {
   if ! command -v devbox &> /dev/null
   then
@@ -451,6 +474,7 @@ if [[ "${1:-}" == "--full" || "${1:-}" == "-f" ]]; then
   # Prune the uv cache before devbox: devbox kicks off background uv/nix work
   # that holds the cache lock and would otherwise make prune_uv hang.
   account_dir "$HOME/.cache/uv" prune_uv
+  update_home_manager
   update_devbox
   update_claude
   update_composer
@@ -467,6 +491,7 @@ if [[ "${1:-}" == "--full" || "${1:-}" == "-f" ]]; then
   account_dir "$HOME/.cache/go-build" cleanup_go
   account_dir "$HOME/.cargo" cleanup_cargo
   prune_docker
+  cleanup_nix
   prune_caches
 
   echo
