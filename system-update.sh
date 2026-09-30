@@ -193,24 +193,6 @@ update_claude() {
   claude update
 }
 
-update_composer() {
-  if ! command -v composer &> /dev/null
-  then
-    return
-  fi
-  echo;
-  echo ">>> Updating composer global packages..."
-
-  composer_path=$(command -v composer)
-  if [ -w "$composer_path" ]
-  then
-    composer self-update
-  else
-    sudo composer self-update
-  fi
-  composer global update
-}
-
 update_home_manager() {
   local flake="$HOME/me/sync/core/nix"
   if ! command -v home-manager &> /dev/null || [ ! -f "$flake/flake.nix" ]
@@ -219,8 +201,9 @@ update_home_manager() {
   fi
   echo;
   echo ">>> Updating home-manager..."
-  nix flake update --flake "$flake"
-  home-manager switch --flake "$flake#sander"
+  # --quiet drops the per-path copying/building lines; warnings and errors still print.
+  nix flake update --quiet --flake "$flake"
+  home-manager switch --flake "$flake#sander" 2>&1 | grep -vE '^(copying|building|unpacking|querying|these|Activating|Starting|Creating|Cleaning|No change|nix profile remove|removing|removed|warning: .install. is a deprecated)'
 }
 
 cleanup_nix() {
@@ -231,7 +214,17 @@ cleanup_nix() {
   echo;
   echo ">>> Collecting nix garbage..."
   # Drops old home-manager generations too; keep 30 days for rollback.
-  nix-collect-garbage --delete-older-than 30d
+  nix-collect-garbage --delete-older-than 30d 2>&1 | tail -1
+}
+
+export_manifests() {
+  if ! command -v hm &> /dev/null
+  then
+    return
+  fi
+  echo;
+  echo ">>> Writing package manifests..."
+  hm export
 }
 
 update_devbox() {
@@ -477,7 +470,6 @@ if [[ "${1:-}" == "--full" || "${1:-}" == "-f" ]]; then
   update_home_manager
   update_devbox
   update_claude
-  update_composer
   update_cargo
   update_uv
 
@@ -492,6 +484,7 @@ if [[ "${1:-}" == "--full" || "${1:-}" == "-f" ]]; then
   account_dir "$HOME/.cargo" cleanup_cargo
   prune_docker
   cleanup_nix
+  export_manifests
   prune_caches
 
   echo
