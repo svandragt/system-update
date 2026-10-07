@@ -9,6 +9,13 @@ FREED_KB=0
 # directory is reliable; the old whole-filesystem df delta was not, because the
 # devbox/nix background work this script kicks off writes to the disk during the
 # cleanup window and masked the real reclaim.
+# True when the binary resolves into the Nix store: home-manager switch
+# updates it, and a self-update would fail against the read-only store.
+nix_managed() {
+  case "$(readlink -f "$(command -v "$1")")" in /nix/store/*) return 0 ;; esac
+  return 1
+}
+
 account_dir() {
   local dir="$1"; shift
   local before after
@@ -188,9 +195,34 @@ update_claude() {
   then
     return
   fi
+  if nix_managed claude; then return; fi
   echo;
   echo ">>> Updating claude..."
   claude update
+}
+
+update_composer() {
+  if ! command -v composer &> /dev/null
+  then
+    return
+  fi
+  if nix_managed composer; then return; fi
+  # A shim (viv) can sit on PATH with no real Composer behind it.
+  if ! composer --version &> /dev/null
+  then
+    return
+  fi
+  echo;
+  echo ">>> Updating composer global packages..."
+
+  composer_path=$(command -v composer)
+  if [ -w "$composer_path" ]
+  then
+    composer self-update
+  else
+    sudo composer self-update
+  fi
+  composer global update
 }
 
 update_home_manager() {
@@ -235,7 +267,7 @@ update_devbox() {
   echo;
   echo ">>> Updating devbox..."
 
-  devbox version update
+  if ! nix_managed devbox; then devbox version update; fi
   devbox global update
   # Rebuild the global profile so the next shell isn't "out of date". This is the
   # scriptable half of the refresh-global alias; the eval-into-shell half only
@@ -419,7 +451,10 @@ update_uv() {
   fi
   echo;
   echo ">>> Updating uv packages..."
-  uv self update --no-progress
+  # Only the standalone installer can self-update; snap/nix/brew installs refuse.
+  if [ -f "${XDG_CONFIG_HOME:-$HOME/.config}/uv/uv-receipt.json" ] && ! nix_managed uv; then
+    uv self update --no-progress
+  fi
   uv tool upgrade --all
 }
 
@@ -482,6 +517,7 @@ if [[ "${1:-}" == "--full" || "${1:-}" == "-f" ]]; then
   update_claude
   update_cargo
   update_uv
+  update_composer
 
   # disk space. account_dir measures the du delta on each home cache we clear;
   # zypper/flatpak/journal/docker report their own freed space inline.
