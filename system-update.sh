@@ -273,6 +273,7 @@ update_devbox() {
   # scriptable half of the refresh-global alias; the eval-into-shell half only
   # matters for an interactive session, so it is dropped here.
   devbox global shellenv --preserve-path-stack -r > /dev/null
+  DEVBOX_UPDATED=1
 }
 
 update_flatpak() {
@@ -299,7 +300,8 @@ update_fwupd() {
   if sudo fwupdmgr get-updates && [[ "$1" == "--full" || "$1" == "-f" ]] && [ -t 0 ]; then
     read -r -p "Apply firmware updates now? [y/N] " reply
     if [[ "$reply" =~ ^[Yy]$ ]]; then
-      sudo fwupdmgr update
+      # Defer the reboot prompt: rebooting here would skip the rest of the run.
+      sudo fwupdmgr update --no-reboot-check && FW_REBOOT=1
     fi
   fi
 }
@@ -515,9 +517,9 @@ if [[ "${1:-}" == "--full" || "${1:-}" == "-f" ]]; then
   update_home_manager
   update_devbox
   update_claude
+  update_composer
   update_cargo
   update_uv
-  update_composer
 
   # disk space. account_dir measures the du delta on each home cache we clear;
   # zypper/flatpak/journal/docker report their own freed space inline.
@@ -547,9 +549,15 @@ if [[ "${1:-}" == "--full" || "${1:-}" == "-f" ]]; then
   fi
 fi
 
-if [ -f "/var/run/reboot-required" ]; then
+if [ -f "/var/run/reboot-required" ] || [ -n "${FW_REBOOT:-}" ]; then
     echo 
     echo "A reboot is recommended."
+fi
+
+# A child process can't refresh the parent shell's env, so remind instead.
+if [ -n "${DEVBOX_UPDATED:-}" ]; then
+    echo
+    echo "Run refresh-global to load the updated devbox packages into this shell."
 fi
 
 # Nice goodbye
