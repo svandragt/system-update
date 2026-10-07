@@ -64,7 +64,6 @@ prune_caches() {
     ["composer"]="$HOME/.composer"
     ["deno"]="$HOME/.cache/deno"
     ["devbox"]="$HOME/.cache/devbox"
-    ["docker"]="$HOME/.docker"
     ["gem"]="$HOME/.gem"
     ["go"]="$HOME/.cache/go-build"
     ["gradle"]="$HOME/.gradle"
@@ -75,8 +74,7 @@ prune_caches() {
     ["pip"]="$HOME/.cache/pip"
     ["poetry"]="$HOME/.cache/pypoetry"
     ["ruby"]="$HOME/.bundle"
-    ["cargo"]="$HOME/.cargo"
-    ["rustup"]="$HOME/.rustup"
+    ["cargo"]="$HOME/.cargo/registry"
     ["subl"]="$HOME/.cache/sublime-text"
     ["tig"]="$HOME/.cache/tig"
     ["uv"]="$HOME/.cache/uv"
@@ -234,8 +232,8 @@ update_home_manager() {
   echo;
   echo ">>> Updating home-manager..."
   # --quiet drops the per-path copying/building lines; warnings and errors still print.
-  nix flake update --quiet --flake "$flake"
-  home-manager switch --flake "$flake#sander" 2>&1 | grep -vE '^(copying|building|unpacking|querying|these|Activating|Starting|Creating|Cleaning|No change|nix profile remove|removing|removed|warning: .install. is a deprecated)'
+  (cd "$flake" && nix flake update --quiet)
+  home-manager switch --flake "$flake#${HM_PROFILE:-desktop}" 2>&1 | grep -vE '^(copying|building|unpacking|querying|these|Activating|Starting|Creating|Cleaning|No change|nix profile remove|removing|removed|warning: .install. is a deprecated)'
 }
 
 cleanup_nix() {
@@ -268,7 +266,7 @@ update_devbox() {
   echo ">>> Updating devbox..."
 
   if ! nix_managed devbox; then devbox version update; fi
-  devbox global update
+  if [ -f "$HOME/.local/share/devbox/global/default/devbox.json" ]; then devbox global update; fi
   # Rebuild the global profile so the next shell isn't "out of date". This is the
   # scriptable half of the refresh-global alias; the eval-into-shell half only
   # matters for an interactive session, so it is dropped here.
@@ -363,6 +361,7 @@ update_npm() {
     return
   fi
   echo;
+  if nix_managed npm; then return; fi
   echo ">>> Updating npm global packages..."
   npm update -g
 }
@@ -394,7 +393,7 @@ cleanup_trash() {
   fi
   echo;
   echo ">>> Emptying trash older than 30 days..."
-  trash-empty 30
+  trash-empty -f 30
 }
 
 cleanup_go() {
@@ -549,20 +548,14 @@ if [[ "${1:-}" == "--full" || "${1:-}" == "-f" ]]; then
   fi
 fi
 
-if [ -f "/var/run/reboot-required" ] || [ -n "${FW_REBOOT:-}" ]; then
-    echo 
-    echo "A reboot is recommended."
-fi
-
 # A child process can't refresh the parent shell's env, so remind instead.
 if [ -n "${DEVBOX_UPDATED:-}" ]; then
     echo
     echo "Run refresh-global to load the updated devbox packages into this shell."
 fi
 
-# Nice goodbye
-if command -v fortune &> /dev/null
-then
-    echo
-    fortune -s
+if [ -f "/var/run/reboot-required" ] || [ -n "${FW_REBOOT:-}" ]; then
+    echo 
+    echo "A reboot is recommended."
 fi
+
