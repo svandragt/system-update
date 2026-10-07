@@ -353,6 +353,16 @@ cleanup_npm() {
   clear_if_large "npm" "$HOME/.npm" 5 npm cache clean --force
 }
 
+cleanup_trash() {
+  if ! command -v trash-empty &> /dev/null
+  then
+    return
+  fi
+  echo;
+  echo ">>> Emptying trash older than 30 days..."
+  trash-empty 30
+}
+
 cleanup_go() {
   if ! command -v go &> /dev/null
   then
@@ -482,6 +492,7 @@ if [[ "${1:-}" == "--full" || "${1:-}" == "-f" ]]; then
   account_dir "$HOME/.npm" cleanup_npm
   account_dir "$HOME/.cache/go-build" cleanup_go
   account_dir "$HOME/.cargo" cleanup_cargo
+  account_dir "$HOME/.local/share/Trash" cleanup_trash
   prune_docker
   cleanup_nix
   export_manifests
