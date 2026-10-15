@@ -28,7 +28,7 @@ bottom of the file controls daily versus `--full` behavior.
   `update_asdf`, `prune_uv`, `update_home_manager`, `update_devbox`,
   `update_claude`, `update_cargo`, and `update_uv`); then disk-space
   reclamation (`cleanup_zypper`, `cleanup_flatpak`, `cleanup_logs`,
-  `cleanup_snapper`, `cleanup_npm`, `cleanup_go`, `cleanup_cargo`,
+  `cleanup_snapper`, `cleanup_npm`, `cleanup_go`, `cleanup_cargo`, `sweep_cargo_targets`,
   `prune_docker`, and `cleanup_nix`); then `export_manifests` and
   `prune_caches`.
 - The trailing block prints a reboot hint when `/var/run/reboot-required`

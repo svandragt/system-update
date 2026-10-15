@@ -188,6 +188,14 @@ cleanup_cargo() {
   # toolchains entirely, and there is no safe "prune only stale toolchains" command.
 }
 
+# Old test binaries pile up in every target/ dir; one vivace checkout reached 89 GB.
+sweep_cargo_targets() {
+  command -v cargo-sweep &> /dev/null || return
+  echo;
+  echo ">>> Sweeping Rust build artifacts older than 14 days under ~/dev..."
+  cargo sweep --recursive --time 14 "$HOME/dev"
+}
+
 update_claude() {
   if ! command -v claude &> /dev/null
   then
@@ -530,6 +538,7 @@ if [[ "${1:-}" == "--full" || "${1:-}" == "-f" ]]; then
   account_dir "$HOME/.cache/go-build" cleanup_go
   account_dir "$HOME/.cargo" cleanup_cargo
   account_dir "$HOME/.local/share/Trash" cleanup_trash
+  account_dir "$HOME/dev" sweep_cargo_targets
   prune_docker
   cleanup_nix
   export_manifests

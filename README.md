@@ -21,7 +21,7 @@ A system update script for developers, using Ubuntu / Debian / elementaryOS base
 - Prunes the uv wheel/source cache on `--full`
 - Verifies (garbage-collects) the npm cache on `--full` when it is large, with a full wipe only past 5G
 - Wipes the Go build cache on `--full` only when it grows past 5G
-- Cleans the cargo registry cache on `--full` (via `cargo-cache` if present, otherwise wipes re-downloadable registry caches past 2G; leaves rustup toolchains untouched)
+- Cleans the cargo registry cache on `--full` (via `cargo-cache` if present, otherwise wipes re-downloadable registry caches past 2G; leaves rustup toolchains untouched), and removes Rust build artifacts under `~/dev` that are older than 14 days (via `cargo-sweep`)
 - Reports the disk space reclaimed at the end of a `--full` run
 - Checks for firmware updates with `fwupd` (refreshes metadata and lists available updates; flashing is left to you via `sudo fwupdmgr update`)
 - Updates VSCode / VSCodium extensions on `--full` (`code`/`codium --update-extensions`)
